@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyReasy.FileStorage", "Ea
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyReasy.FileStorage.Tests", "EasyReasy.FileStorage.Tests\EasyReasy.FileStorage.Tests.csproj", "{6EED73AD-8BFF-4201-9910-C6CDBD29C1B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyReasy.FileStorage.Server", "EasyReasy.FileStorage.Server\EasyReasy.FileStorage.Server.csproj", "{45D5D505-8456-49B1-84B7-EC08BBC71AB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyReasy.FileStorage.Remote.Common", "EasyReasy.FileStorage.Remote.Common\EasyReasy.FileStorage.Remote.Common.csproj", "{F4419EAD-84F7-44A5-83E7-04D86723FFD9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{6EED73AD-8BFF-4201-9910-C6CDBD29C1B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6EED73AD-8BFF-4201-9910-C6CDBD29C1B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6EED73AD-8BFF-4201-9910-C6CDBD29C1B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45D5D505-8456-49B1-84B7-EC08BBC71AB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45D5D505-8456-49B1-84B7-EC08BBC71AB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45D5D505-8456-49B1-84B7-EC08BBC71AB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45D5D505-8456-49B1-84B7-EC08BBC71AB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4419EAD-84F7-44A5-83E7-04D86723FFD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4419EAD-84F7-44A5-83E7-04D86723FFD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4419EAD-84F7-44A5-83E7-04D86723FFD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4419EAD-84F7-44A5-83E7-04D86723FFD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

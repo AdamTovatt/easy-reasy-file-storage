@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EasyReasy.FileStorage\EasyReasy.FileStorage.csproj" />
+    <ProjectReference Include="..\EasyReasy.FileStorage.Server\EasyReasy.FileStorage.Server.csproj" />
+    <ProjectReference Include="..\EasyReasy.FileStorage.Remote.Common\EasyReasy.FileStorage.Remote.Common.csproj" />
   </ItemGroup>
 
 </Project>

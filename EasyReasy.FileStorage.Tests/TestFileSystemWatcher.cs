@@ -1,5 +1,3 @@
-using EasyReasy.FileStorage;
-
 namespace EasyReasy.FileStorage.Tests;
 
 /// <summary>
@@ -68,4 +66,4 @@ public class TestFileSystemWatcher : IFileSystemWatcher
         _receivedEvents.Add(change);
         return Task.CompletedTask;
     }
-} 
+}

@@ -27,4 +27,4 @@ public class WatcherDisposable : IDisposable
     {
         _ = Task.Run(async () => await _fileSystem.RemoveFileSystemWatcher(_watcher));
     }
-} 
+}
