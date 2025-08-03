@@ -1,8 +1,7 @@
-using EasyReasy.Auth;
+using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EasyReasy.FileStorage.Server.Controllers
 {
@@ -46,14 +45,14 @@ namespace EasyReasy.FileStorage.Server.Controllers
             IUserService userService = _userServiceFactory.CreateUserService(tenantId);
 
             // Check if user already exists
-            var existingUser = await userService.GetUserByNameAsync(request.Username);
+            User? existingUser = await userService.GetUserByNameAsync(request.Username);
             if (existingUser != null)
             {
                 return Conflict($"User '{request.Username}' already exists in tenant '{tenantId}'");
             }
 
             // Create the user
-            bool success = await userService.CreateUserAsync(request.Username, request.Password);
+            bool success = await userService.CreateUserAsync(request.Username, request.Password, request.IsAdmin, request.StorageLimitBytes);
             if (!success)
             {
                 return BadRequest("Failed to create user");
@@ -63,6 +62,8 @@ namespace EasyReasy.FileStorage.Server.Controllers
             {
                 Username = request.Username,
                 TenantId = tenantId,
+                IsAdmin = request.IsAdmin,
+                StorageLimitBytes = request.StorageLimitBytes,
                 CreatedAt = DateTime.UtcNow
             });
         }
@@ -86,7 +87,7 @@ namespace EasyReasy.FileStorage.Server.Controllers
             IUserService userService = _userServiceFactory.CreateUserService(tenantId);
 
             // Get user information
-            var user = await userService.GetUserByNameAsync(username);
+            User? user = await userService.GetUserByNameAsync(username);
             if (user == null)
             {
                 return NotFound($"User '{username}' not found in tenant '{tenantId}'");
@@ -96,24 +97,10 @@ namespace EasyReasy.FileStorage.Server.Controllers
             {
                 Username = user.Id,
                 TenantId = tenantId,
+                IsAdmin = user.IsAdmin,
+                StorageLimitBytes = user.StorageLimitBytes,
                 HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
             });
         }
     }
-
-    /// <summary>
-    /// Request model for creating a new user.
-    /// </summary>
-    public class CreateUserRequest
-    {
-        /// <summary>
-        /// The username for the new user.
-        /// </summary>
-        public string Username { get; set; } = string.Empty;
-
-        /// <summary>
-        /// The password for the new user.
-        /// </summary>
-        public string Password { get; set; } = string.Empty;
-    }
-} 
+}

@@ -1,13 +1,15 @@
 using EasyReasy.Auth;
 using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Remote.Common;
+using EasyReasy.FileStorage.Server.Configuration;
+using System.Text.Json;
 
 namespace EasyReasy.FileStorage.Server.Services
 {
     /// <summary>
     /// File system-based implementation of IUserService.
     /// Reads user data from a hierarchical file system structure:
-    /// BaseStoragePath/tenantId/userId/.password and BaseStoragePath/tenantId/userId/files/
+    /// BaseStoragePath/tenantId/userId/user.json and BaseStoragePath/tenantId/userId/files/
     /// </summary>
     public class FileSystemUserService : IUserService
     {
@@ -43,7 +45,7 @@ namespace EasyReasy.FileStorage.Server.Services
             }
 
             string userDirectoryPath = Path.Combine(_baseStoragePath, _tenantId, username);
-            string passwordFilePath = Path.Combine(userDirectoryPath, ".password");
+            string userJsonFilePath = Path.Combine(userDirectoryPath, "user.json");
 
             // Check if the user directory exists
             if (!Directory.Exists(userDirectoryPath))
@@ -51,28 +53,28 @@ namespace EasyReasy.FileStorage.Server.Services
                 return null;
             }
 
-            // Check if the password file exists
-            if (!File.Exists(passwordFilePath))
+            // Check if the user.json file exists
+            if (!File.Exists(userJsonFilePath))
             {
                 return null;
             }
 
             try
             {
-                // Read the password hash from the .password file
-                string passwordHash = await File.ReadAllTextAsync(passwordFilePath);
-                passwordHash = passwordHash.Trim();
+                // Read and deserialize the user data from the user.json file
+                string userJson = await File.ReadAllTextAsync(userJsonFilePath);
+                User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
 
-                if (string.IsNullOrEmpty(passwordHash))
+                if (user == null)
                 {
                     return null;
                 }
 
-                return new User(username, passwordHash);
+                return user;
             }
             catch (Exception)
             {
-                // If we can't read the password file, the user is invalid
+                // If we can't read or deserialize the user file, the user is invalid
                 return null;
             }
         }
@@ -83,8 +85,10 @@ namespace EasyReasy.FileStorage.Server.Services
         /// </summary>
         /// <param name="username">The username.</param>
         /// <param name="password">The plain text password.</param>
+        /// <param name="isAdmin">Whether the user should have admin privileges.</param>
+        /// <param name="storageLimitBytes">The storage limit in bytes for this user.</param>
         /// <returns>True if the user was created successfully, false otherwise.</returns>
-        public async Task<bool> CreateUserAsync(string username, string password)
+        public async Task<bool> CreateUserAsync(string username, string password, bool isAdmin = false, long storageLimitBytes = 1024 * 1024 * 1024)
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
@@ -92,7 +96,7 @@ namespace EasyReasy.FileStorage.Server.Services
             }
 
             string userDirectoryPath = Path.Combine(_baseStoragePath, _tenantId, username);
-            string passwordFilePath = Path.Combine(userDirectoryPath, ".password");
+            string userJsonFilePath = Path.Combine(userDirectoryPath, "user.json");
             string filesDirectoryPath = Path.Combine(userDirectoryPath, "files");
 
             try
@@ -103,9 +107,13 @@ namespace EasyReasy.FileStorage.Server.Services
                 // Create the files directory
                 Directory.CreateDirectory(filesDirectoryPath);
 
-                // Create the password file with the hashed password
+                // Create the user data with hashed password
                 string passwordHash = _passwordHasher.HashPassword(password, username);
-                await File.WriteAllTextAsync(passwordFilePath, passwordHash);
+                User user = new User(username, passwordHash, isAdmin, storageLimitBytes);
+
+                // Serialize and save the user data to user.json
+                string userJson = JsonSerializer.Serialize(user, JsonConfiguration.DefaultOptions);
+                await File.WriteAllTextAsync(userJsonFilePath, userJson);
 
                 return true;
             }

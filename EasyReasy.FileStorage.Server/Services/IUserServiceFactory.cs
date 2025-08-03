@@ -1,5 +1,3 @@
-using EasyReasy.FileStorage.Remote.Common;
-
 namespace EasyReasy.FileStorage.Server.Services
 {
     /// <summary>
@@ -14,4 +12,4 @@ namespace EasyReasy.FileStorage.Server.Services
         /// <returns>A user service instance scoped to the specified tenant.</returns>
         IUserService CreateUserService(string tenantId);
     }
-} 
+}

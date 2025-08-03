@@ -1,6 +1,8 @@
 using EasyReasy.Auth;
 using EasyReasy.FileStorage.Remote.Common;
+using EasyReasy.FileStorage.Server.Configuration;
 using EasyReasy.FileStorage.Server.Services;
+using System.Text.Json;
 
 namespace EasyReasy.FileStorage.Tests
 {
@@ -43,17 +45,17 @@ namespace EasyReasy.FileStorage.Tests
             Directory.CreateDirectory(testDirectory);
 
             // Create test users within the tenant directory
-            CreateTestUser(testDirectory, _testTenantId, "testuser1", "password123");
-            CreateTestUser(testDirectory, _testTenantId, "testuser2", "password456");
-            CreateTestUser(testDirectory, _testTenantId, "admin", "admin123");
+            CreateTestUser(testDirectory, _testTenantId, "testuser1", "password123", false, 1024 * 1024 * 100); // 100MB
+            CreateTestUser(testDirectory, _testTenantId, "testuser2", "password456", false, 1024 * 1024 * 200); // 200MB
+            CreateTestUser(testDirectory, _testTenantId, "admin", "admin123", true, 1024 * 1024 * 1024); // 1GB admin
 
             return testDirectory;
         }
 
-        private void CreateTestUser(string testDirectory, string tenantId, string username, string password)
+        private void CreateTestUser(string testDirectory, string tenantId, string username, string password, bool isAdmin, long storageLimitBytes)
         {
             string userDirectoryPath = Path.Combine(testDirectory, tenantId, username);
-            string passwordFilePath = Path.Combine(userDirectoryPath, ".password");
+            string userJsonFilePath = Path.Combine(userDirectoryPath, "user.json");
             string filesDirectoryPath = Path.Combine(userDirectoryPath, "files");
 
             // Create user directory
@@ -62,9 +64,13 @@ namespace EasyReasy.FileStorage.Tests
             // Create files directory
             Directory.CreateDirectory(filesDirectoryPath);
 
-            // Create password file with hashed password using the proper password hasher
+            // Create user data with hashed password
             string passwordHash = _passwordHasher.HashPassword(password, username);
-            File.WriteAllText(passwordFilePath, passwordHash);
+            User user = new User(username, passwordHash, isAdmin, storageLimitBytes);
+
+            // Serialize and save the user data to user.json
+            string userJson = JsonSerializer.Serialize(user, JsonConfiguration.DefaultOptions);
+            File.WriteAllText(userJsonFilePath, userJson);
         }
 
         [TestMethod]
@@ -80,6 +86,25 @@ namespace EasyReasy.FileStorage.Tests
             Assert.IsNotNull(user);
             Assert.AreEqual(username, user.Id);
             Assert.IsFalse(string.IsNullOrEmpty(user.PasswordHash));
+            Assert.IsFalse(user.IsAdmin);
+            Assert.AreEqual(1024 * 1024 * 100, user.StorageLimitBytes);
+        }
+
+        [TestMethod]
+        public async Task GetUserByNameAsync_WithAdminUser_ShouldReturnAdminUser()
+        {
+            // Arrange
+            string username = "admin";
+
+            // Act
+            User? user = await _userService.GetUserByNameAsync(username);
+
+            // Assert
+            Assert.IsNotNull(user);
+            Assert.AreEqual(username, user.Id);
+            Assert.IsFalse(string.IsNullOrEmpty(user.PasswordHash));
+            Assert.IsTrue(user.IsAdmin);
+            Assert.AreEqual(1024 * 1024 * 1024, user.StorageLimitBytes);
         }
 
         [TestMethod]
@@ -151,6 +176,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.IsNotNull(user2);
             Assert.AreEqual(username2, user2.Id);
             Assert.AreNotEqual(user1.PasswordHash, user2.PasswordHash);
+            Assert.AreEqual(1024 * 1024 * 100, user1.StorageLimitBytes);
+            Assert.AreEqual(1024 * 1024 * 200, user2.StorageLimitBytes);
         }
 
         [TestMethod]
@@ -235,6 +262,33 @@ namespace EasyReasy.FileStorage.Tests
             User? user = await _userService.GetUserByNameAsync(username);
             Assert.IsNotNull(user);
             Assert.AreEqual(username, user.Id);
+            Assert.IsFalse(user.IsAdmin);
+            Assert.AreEqual(1024 * 1024 * 1024, user.StorageLimitBytes); // Default 1GB
+
+            // Verify password validation works
+            IPasswordHasher passwordHasher = new SecurePasswordHasher();
+            Assert.IsTrue(passwordHasher.ValidatePassword(password, user.PasswordHash, username));
+        }
+
+        [TestMethod]
+        public async Task CreateUserAsync_WithAdminUser_ShouldCreateAdminUser()
+        {
+            // Arrange
+            string username = "newadmin";
+            string password = "adminpassword";
+
+            // Act
+            bool success = await _userService.CreateUserAsync(username, password, isAdmin: true, storageLimitBytes: 2L * 1024 * 1024 * 1024); // 2GB
+
+            // Assert
+            Assert.IsTrue(success);
+
+            // Verify user was created
+            User? user = await _userService.GetUserByNameAsync(username);
+            Assert.IsNotNull(user);
+            Assert.AreEqual(username, user.Id);
+            Assert.IsTrue(user.IsAdmin);
+            Assert.AreEqual(2L * 1024 * 1024 * 1024, user.StorageLimitBytes);
 
             // Verify password validation works
             IPasswordHasher passwordHasher = new SecurePasswordHasher();
@@ -288,10 +342,10 @@ namespace EasyReasy.FileStorage.Tests
         }
 
         [TestMethod]
-        public async Task CreateUserAsync_ShouldCreatePasswordFile()
+        public async Task CreateUserAsync_ShouldCreateUserJsonFile()
         {
             // Arrange
-            string username = "passworduser";
+            string username = "jsonuser";
             string password = "password";
 
             // Act
@@ -300,16 +354,21 @@ namespace EasyReasy.FileStorage.Tests
             // Assert
             Assert.IsTrue(success);
 
-            // Verify password file was created
-            string passwordFilePath = Path.Combine(_testBasePath, _testTenantId, username, ".password");
-            Assert.IsTrue(File.Exists(passwordFilePath));
+            // Verify user.json file was created
+            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            Assert.IsTrue(File.Exists(userJsonFilePath));
 
-            // Verify password file contains hashed password
-            string passwordHash = File.ReadAllText(passwordFilePath);
-            Assert.IsFalse(string.IsNullOrEmpty(passwordHash));
+            // Verify user.json file contains valid JSON
+            string userJson = File.ReadAllText(userJsonFilePath);
+            Assert.IsFalse(string.IsNullOrEmpty(userJson));
+
+            // Verify the JSON can be deserialized
+            User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
+            Assert.IsNotNull(user);
+            Assert.AreEqual(username, user.Id);
 
             IPasswordHasher passwordHasher = new SecurePasswordHasher();
-            Assert.IsTrue(passwordHasher.ValidatePassword(password, passwordHash, username));
+            Assert.IsTrue(passwordHasher.ValidatePassword(password, user.PasswordHash, username));
         }
     }
 }

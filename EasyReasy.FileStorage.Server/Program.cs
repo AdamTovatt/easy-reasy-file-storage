@@ -23,11 +23,8 @@ namespace EasyReasy.FileStorage.Server
             // Register user service factory
             builder.Services.AddSingleton<IUserServiceFactory, FileSystemUserServiceFactory>();
 
-            // Register our custom authentication service
-            builder.Services.AddAuthValidationService(new AuthService(
-                builder.Services.BuildServiceProvider().GetRequiredService<IJwtTokenService>(),
-                builder.Services.BuildServiceProvider().GetRequiredService<IUserServiceFactory>(),
-                builder.Services.BuildServiceProvider().GetRequiredService<IPasswordHasher>()));
+            // Register our custom authentication service as singleton
+            builder.Services.AddSingleton<IAuthRequestValidationService, AuthService>();
 
             WebApplication app = builder.Build();
 

@@ -69,6 +69,9 @@ namespace EasyReasy.FileStorage.Server.Services
                 return null;
             }
 
+            // Determine user roles based on admin status
+            string[] roles = user.IsAdmin ? new[] { "admin", "user" } : new[] { "user" };
+
             // Create JWT token with user claims including tenant ID
             DateTime expiresAt = DateTime.UtcNow.AddHours(1);
             string token = jwtTokenService.CreateToken(
@@ -79,7 +82,7 @@ namespace EasyReasy.FileStorage.Server.Services
                     new Claim("user_id", user.Id),
                     new Claim("tenant_id", tenantId)
                 },
-                roles: new[] { "user" },
+                roles: roles,
                 expiresAt: expiresAt);
 
             return new AuthResponse(token, expiresAt.ToString("o"));
