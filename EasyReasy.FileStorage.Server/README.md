@@ -216,6 +216,39 @@ export JWT_SIGNING_SECRET=your-super-secure-jwt-signing-secret-at-least-32-chars
 dotnet run
 ```
 
+### CLI Commands
+
+The application can also be used as a command-line tool for administrative tasks:
+
+#### Create Tenant
+```bash
+# Create a new tenant
+EasyReasy.FileStorage.Server create-tenant --name="tenant01"
+```
+
+#### Create User
+```bash
+# Create a regular user
+EasyReasy.FileStorage.Server create-user --tenant="tenant01" --name="user1" --password="password123"
+
+# Create an admin user
+EasyReasy.FileStorage.Server create-user --tenant="tenant01" --name="admin" --password="admin123" --isAdmin="true"
+
+# Create user with custom storage limit
+EasyReasy.FileStorage.Server create-user --tenant="tenant01" --name="user2" --password="password456" --storageLimit="10gb"
+
+# Using short options
+EasyReasy.FileStorage.Server create-user -t="tenant01" -n="user3" -p="password789" -s="5gb"
+```
+
+#### Storage Limit Formats
+The `--storageLimit` parameter accepts various formats:
+- `10gb` - 10 gigabytes
+- `500mb` - 500 megabytes  
+- `100kb` - 100 kilobytes
+- `1024` - 1024 bytes
+- Default: `1gb` if not specified
+
 ### Testing
 ```bash
 # Run all tests
