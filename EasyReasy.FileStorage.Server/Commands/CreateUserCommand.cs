@@ -1,8 +1,7 @@
-using System.CommandLine;
 using EasyReasy.Auth;
-using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Services;
+using System.CommandLine;
 
 namespace EasyReasy.FileStorage.Server.Commands
 {
@@ -162,4 +161,4 @@ namespace EasyReasy.FileStorage.Server.Commands
             return $"{size:0.##} {sizes[order]}";
         }
     }
-} 
+}

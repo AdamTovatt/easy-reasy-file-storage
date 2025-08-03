@@ -1,5 +1,4 @@
 using EasyReasy.Auth;
-using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Commands;
 using EasyReasy.FileStorage.Server.Configuration;
@@ -56,11 +55,11 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            
+
             // Verify user was created
             string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
-            
+
             // Verify user data
             string userJson = File.ReadAllText(userJsonFilePath);
             User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
@@ -83,11 +82,11 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            
+
             // Verify user was created
             string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
-            
+
             // Verify user data
             string userJson = File.ReadAllText(userJsonFilePath);
             User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
@@ -109,11 +108,11 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            
+
             // Verify user was created
             string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
-            
+
             // Verify user data
             string userJson = File.ReadAllText(userJsonFilePath);
             User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
@@ -128,10 +127,10 @@ namespace EasyReasy.FileStorage.Tests
             // Arrange
             string username = "existinguser";
             string password = "password";
-            
+
             // Create existing user
             CreateTestUser(username, password, false, 1024 * 1024 * 1024);
-            
+
             string[] args = { "create-user", "--tenant", _testTenantId, "--name", username, "--password", password };
 
             // Act
@@ -143,7 +142,7 @@ namespace EasyReasy.FileStorage.Tests
             string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
             string userJson = File.ReadAllText(userJsonFilePath);
             User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
-            
+
             // Verify the user data hasn't changed (no new user was created)
             Assert.IsNotNull(user);
             Assert.AreEqual(username, user.Id);
@@ -222,7 +221,7 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            
+
             // Verify user was created
             string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
@@ -274,4 +273,4 @@ namespace EasyReasy.FileStorage.Tests
             File.WriteAllText(userJsonFilePath, userJson);
         }
     }
-} 
+}

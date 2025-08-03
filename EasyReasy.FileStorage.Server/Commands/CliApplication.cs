@@ -28,4 +28,4 @@ namespace EasyReasy.FileStorage.Server.Commands
             return await _rootCommand.InvokeAsync(args);
         }
     }
-} 
+}

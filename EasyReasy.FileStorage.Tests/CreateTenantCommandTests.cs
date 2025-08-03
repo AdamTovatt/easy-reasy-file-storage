@@ -1,4 +1,3 @@
-using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Server.Commands;
 using System.CommandLine;
 
@@ -132,11 +131,11 @@ namespace EasyReasy.FileStorage.Tests
             // Assert
             Assert.AreEqual(0, exitCode1);
             Assert.AreEqual(0, exitCode2);
-            
+
             string tenantDirectoryPath1 = Path.Combine(_testBasePath, tenantName1);
             string tenantDirectoryPath2 = Path.Combine(_testBasePath, tenantName2);
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath1));
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath2));
         }
     }
-} 
+}

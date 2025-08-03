@@ -16,4 +16,4 @@ namespace EasyReasy.FileStorage.Server.Configuration
             WriteIndented = true
         };
     }
-} 
+}

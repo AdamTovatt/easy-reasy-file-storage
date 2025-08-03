@@ -12,4 +12,4 @@ namespace EasyReasy.FileStorage.Server.Commands
         /// <returns>Exit code (0 for success, non-zero for failure).</returns>
         Task<int> ExecuteAsync(string[] args);
     }
-} 
+}

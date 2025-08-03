@@ -1,5 +1,5 @@
-using System.CommandLine;
 using EasyReasy.EnvironmentVariables;
+using System.CommandLine;
 
 namespace EasyReasy.FileStorage.Server.Commands
 {
@@ -56,4 +56,4 @@ namespace EasyReasy.FileStorage.Server.Commands
             }
         }
     }
-} 
+}
