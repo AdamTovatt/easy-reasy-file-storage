@@ -16,7 +16,7 @@ namespace EasyReasy.FileStorage.Server
         /// Base path for file storage where tenant and user folders are located.
         /// Structure: BaseStoragePath/tenant/user/.password and BaseStoragePath/tenant/user/files/
         /// </summary>
-        [EnvironmentVariableName]
+        [EnvironmentVariableName(minLength: 0)]
         public static readonly VariableName BaseStoragePath = new VariableName("BASE_STORAGE_PATH");
     }
 }

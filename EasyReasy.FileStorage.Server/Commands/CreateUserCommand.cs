@@ -1,6 +1,8 @@
 using EasyReasy.Auth;
+using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 
 namespace EasyReasy.FileStorage.Server.Commands
@@ -75,8 +77,17 @@ namespace EasyReasy.FileStorage.Server.Commands
                 // Create password hasher
                 IPasswordHasher passwordHasher = new SecurePasswordHasher();
 
-                // Create user service for the tenant
-                FileSystemUserService userService = new FileSystemUserService(passwordHasher, tenant);
+                // Create logger factory and logger
+                ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+                ILogger<FileSystemUserServiceFactory> logger = loggerFactory.CreateLogger<FileSystemUserServiceFactory>();
+                ILogger<BasePathProvider> basePathLogger = loggerFactory.CreateLogger<BasePathProvider>();
+
+                // Create base path provider
+                IBasePathProvider basePathProvider = new BasePathProvider(basePathLogger);
+
+                // Create user service factory and get user service for the tenant
+                FileSystemUserServiceFactory userServiceFactory = new FileSystemUserServiceFactory(passwordHasher, logger, basePathProvider);
+                IUserService userService = userServiceFactory.CreateUserService(tenant);
 
                 // Check if user already exists
                 User? existingUser = await userService.GetUserByNameAsync(name);

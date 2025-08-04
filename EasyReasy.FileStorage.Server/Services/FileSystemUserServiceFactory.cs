@@ -8,10 +8,17 @@ namespace EasyReasy.FileStorage.Server.Services
     public class FileSystemUserServiceFactory : IUserServiceFactory
     {
         private readonly IPasswordHasher _passwordHasher;
+        private readonly ILogger<FileSystemUserServiceFactory> _logger;
+        private readonly IBasePathProvider _basePathProvider;
 
-        public FileSystemUserServiceFactory(IPasswordHasher passwordHasher)
+        public FileSystemUserServiceFactory(IPasswordHasher passwordHasher, ILogger<FileSystemUserServiceFactory> logger, IBasePathProvider basePathProvider)
         {
             _passwordHasher = passwordHasher;
+            _logger = logger;
+            _basePathProvider = basePathProvider;
+
+            string absoluteBasePath = _basePathProvider.GetRootPath();
+            _logger.LogInformation("FileSystemUserServiceFactory initialized with base path: {AbsoluteBasePath}", absoluteBasePath);
         }
 
         /// <summary>
@@ -21,7 +28,8 @@ namespace EasyReasy.FileStorage.Server.Services
         /// <returns>A FileSystemUserService instance scoped to the specified tenant.</returns>
         public IUserService CreateUserService(string tenantId)
         {
-            return new FileSystemUserService(_passwordHasher, tenantId);
+            string dataFolderPath = _basePathProvider.GetDataPath();
+            return new FileSystemUserService(_passwordHasher, tenantId, dataFolderPath);
         }
     }
 }

@@ -1,5 +1,4 @@
 using EasyReasy.Auth;
-using EasyReasy.EnvironmentVariables;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Configuration;
 using System.Text.Json;
@@ -17,11 +16,11 @@ namespace EasyReasy.FileStorage.Server.Services
         private readonly string _tenantId;
         private readonly IPasswordHasher _passwordHasher;
 
-        public FileSystemUserService(IPasswordHasher passwordHasher, string tenantId)
+        public FileSystemUserService(IPasswordHasher passwordHasher, string tenantId, string baseStoragePath)
         {
             _passwordHasher = passwordHasher;
             _tenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
-            _baseStoragePath = EnvironmentVariable.BaseStoragePath.GetValue();
+            _baseStoragePath = baseStoragePath ?? throw new ArgumentNullException(nameof(baseStoragePath));
 
             // Ensure the base storage path exists
             if (!Directory.Exists(_baseStoragePath))

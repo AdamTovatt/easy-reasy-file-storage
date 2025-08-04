@@ -2,6 +2,7 @@ using EasyReasy.Auth;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Configuration;
 using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace EasyReasy.FileStorage.Tests
@@ -13,17 +14,24 @@ namespace EasyReasy.FileStorage.Tests
         private FileSystemUserService _userService = null!;
         private IPasswordHasher _passwordHasher = null!;
         private string _testTenantId = "test-tenant";
+        private IBasePathProvider _basePathProvider = null!;
 
         [TestInitialize]
         public void TestInitialize()
         {
             _passwordHasher = new SecurePasswordHasher();
             _testBasePath = InitializeTestFileSystem();
+            string dataFolderPath = Path.Combine(_testBasePath, "data");
 
             // Set the environment variable for the test
             Environment.SetEnvironmentVariable("BASE_STORAGE_PATH", _testBasePath);
 
-            _userService = new FileSystemUserService(_passwordHasher, _testTenantId);
+            // Create logger and base path provider
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ILogger<BasePathProvider> logger = loggerFactory.CreateLogger<BasePathProvider>();
+            _basePathProvider = new BasePathProvider(logger);
+
+            _userService = new FileSystemUserService(_passwordHasher, _testTenantId, dataFolderPath);
         }
 
         [TestCleanup]
@@ -43,11 +51,15 @@ namespace EasyReasy.FileStorage.Tests
             // Create a unique test directory
             string testDirectory = Path.Combine(Path.GetTempPath(), $"EasyReasyUserTest_{Guid.NewGuid()}");
             Directory.CreateDirectory(testDirectory);
+            
+            // Create data subfolder
+            string dataFolderPath = Path.Combine(testDirectory, "data");
+            Directory.CreateDirectory(dataFolderPath);
 
-            // Create test users within the tenant directory
-            CreateTestUser(testDirectory, _testTenantId, "testuser1", "password123", false, 1024 * 1024 * 100); // 100MB
-            CreateTestUser(testDirectory, _testTenantId, "testuser2", "password456", false, 1024 * 1024 * 200); // 200MB
-            CreateTestUser(testDirectory, _testTenantId, "admin", "admin123", true, 1024 * 1024 * 1024); // 1GB admin
+            // Create test users within the tenant directory in the data folder
+            CreateTestUser(dataFolderPath, _testTenantId, "testuser1", "password123", false, 1024 * 1024 * 100); // 100MB
+            CreateTestUser(dataFolderPath, _testTenantId, "testuser2", "password456", false, 1024 * 1024 * 200); // 200MB
+            CreateTestUser(dataFolderPath, _testTenantId, "admin", "admin123", true, 1024 * 1024 * 1024); // 1GB admin
 
             return testDirectory;
         }
@@ -337,7 +349,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.IsTrue(success);
 
             // Verify files directory was created
-            string filesDirectoryPath = Path.Combine(_testBasePath, _testTenantId, username, "files");
+            string dataPath = _basePathProvider.GetDataPath();
+            string filesDirectoryPath = Path.Combine(dataPath, _testTenantId, username, "files");
             Assert.IsTrue(Directory.Exists(filesDirectoryPath));
         }
 
@@ -355,7 +368,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.IsTrue(success);
 
             // Verify user.json file was created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
 
             // Verify user.json file contains valid JSON

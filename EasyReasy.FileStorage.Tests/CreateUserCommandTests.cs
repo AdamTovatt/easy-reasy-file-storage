@@ -2,6 +2,8 @@ using EasyReasy.Auth;
 using EasyReasy.FileStorage.Remote.Common;
 using EasyReasy.FileStorage.Server.Commands;
 using EasyReasy.FileStorage.Server.Configuration;
+using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 using System.Text.Json;
 
@@ -13,6 +15,7 @@ namespace EasyReasy.FileStorage.Tests
         private string _testBasePath = null!;
         private CreateUserCommand _command = null!;
         private string _testTenantId = "test-tenant";
+        private IBasePathProvider _basePathProvider = null!;
 
         [TestInitialize]
         public void TestInitialize()
@@ -23,9 +26,10 @@ namespace EasyReasy.FileStorage.Tests
             // Set the environment variable for the test
             Environment.SetEnvironmentVariable("BASE_STORAGE_PATH", _testBasePath);
 
-            // Create tenant directory
-            string tenantDirectoryPath = Path.Combine(_testBasePath, _testTenantId);
-            Directory.CreateDirectory(tenantDirectoryPath);
+            // Create logger and base path provider
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ILogger<BasePathProvider> logger = loggerFactory.CreateLogger<BasePathProvider>();
+            _basePathProvider = new BasePathProvider(logger);
 
             _command = new CreateUserCommand();
         }
@@ -57,7 +61,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.AreEqual(0, exitCode);
 
             // Verify user was created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
 
             // Verify user data
@@ -84,7 +89,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.AreEqual(0, exitCode);
 
             // Verify user was created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
 
             // Verify user data
@@ -110,7 +116,8 @@ namespace EasyReasy.FileStorage.Tests
             Assert.AreEqual(0, exitCode);
 
             // Verify user was created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
 
             // Verify user data
@@ -139,7 +146,8 @@ namespace EasyReasy.FileStorage.Tests
             // Assert
             // System.CommandLine always returns 0, so we can't rely on exit codes in tests
             // The error handling is tested by checking that the user was not created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             string userJson = File.ReadAllText(userJsonFilePath);
             User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
 
@@ -223,8 +231,17 @@ namespace EasyReasy.FileStorage.Tests
             Assert.AreEqual(0, exitCode);
 
             // Verify user was created
-            string userJsonFilePath = Path.Combine(_testBasePath, _testTenantId, username, "user.json");
+            string dataPath = _basePathProvider.GetDataPath();
+            string userJsonFilePath = Path.Combine(dataPath, _testTenantId, username, "user.json");
             Assert.IsTrue(File.Exists(userJsonFilePath));
+
+            // Verify user data
+            string userJson = File.ReadAllText(userJsonFilePath);
+            User? user = JsonSerializer.Deserialize<User>(userJson, JsonConfiguration.DefaultOptions);
+            Assert.IsNotNull(user);
+            Assert.AreEqual(username, user.Id);
+            Assert.IsFalse(user.IsAdmin);
+            Assert.AreEqual(1024 * 1024 * 1024, user.StorageLimitBytes); // Default 1GB
         }
 
         [TestMethod]
@@ -253,7 +270,8 @@ namespace EasyReasy.FileStorage.Tests
 
         private void CreateTestUser(string username, string password, bool isAdmin, long storageLimitBytes)
         {
-            string userDirectoryPath = Path.Combine(_testBasePath, _testTenantId, username);
+            string dataPath = _basePathProvider.GetDataPath();
+            string userDirectoryPath = Path.Combine(dataPath, _testTenantId, username);
             string userJsonFilePath = Path.Combine(userDirectoryPath, "user.json");
             string filesDirectoryPath = Path.Combine(userDirectoryPath, "files");
 

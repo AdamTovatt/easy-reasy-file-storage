@@ -1,4 +1,6 @@
 using EasyReasy.FileStorage.Server.Commands;
+using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 
 namespace EasyReasy.FileStorage.Tests
@@ -8,6 +10,7 @@ namespace EasyReasy.FileStorage.Tests
     {
         private string _testBasePath = null!;
         private CreateTenantCommand _command = null!;
+        private IBasePathProvider _basePathProvider = null!;
 
         [TestInitialize]
         public void TestInitialize()
@@ -17,6 +20,11 @@ namespace EasyReasy.FileStorage.Tests
 
             // Set the environment variable for the test
             Environment.SetEnvironmentVariable("BASE_STORAGE_PATH", _testBasePath);
+
+            // Create logger and base path provider
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ILogger<BasePathProvider> logger = loggerFactory.CreateLogger<BasePathProvider>();
+            _basePathProvider = new BasePathProvider(logger);
 
             _command = new CreateTenantCommand();
         }
@@ -45,7 +53,8 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            string tenantDirectoryPath = Path.Combine(_testBasePath, tenantName);
+            string dataPath = _basePathProvider.GetDataPath();
+            string tenantDirectoryPath = Path.Combine(dataPath, tenantName);
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath));
         }
 
@@ -54,7 +63,8 @@ namespace EasyReasy.FileStorage.Tests
         {
             // Arrange
             string tenantName = "existing-tenant";
-            string tenantDirectoryPath = Path.Combine(_testBasePath, tenantName);
+            string dataPath = _basePathProvider.GetDataPath();
+            string tenantDirectoryPath = Path.Combine(dataPath, tenantName);
             Directory.CreateDirectory(tenantDirectoryPath);
 
             string[] args = { "create-tenant", "--name", tenantName };
@@ -79,7 +89,8 @@ namespace EasyReasy.FileStorage.Tests
             // Assert
             // Verify no tenant was created with empty name
             // The command should not create any directory when name is empty
-            string[] directories = Directory.GetDirectories(_testBasePath);
+            string dataPath = _basePathProvider.GetDataPath();
+            string[] directories = Directory.GetDirectories(dataPath);
             Assert.AreEqual(0, directories.Length, "No directories should be created with empty tenant name");
         }
 
@@ -95,7 +106,8 @@ namespace EasyReasy.FileStorage.Tests
             // Assert
             // Verify no tenant was created with whitespace name
             // The command should not create any directory when name is whitespace
-            string[] directories = Directory.GetDirectories(_testBasePath);
+            string dataPath = _basePathProvider.GetDataPath();
+            string[] directories = Directory.GetDirectories(dataPath);
             Assert.AreEqual(0, directories.Length, "No directories should be created with whitespace tenant name");
         }
 
@@ -111,7 +123,8 @@ namespace EasyReasy.FileStorage.Tests
 
             // Assert
             Assert.AreEqual(0, exitCode);
-            string tenantDirectoryPath = Path.Combine(_testBasePath, tenantName);
+            string dataPath = _basePathProvider.GetDataPath();
+            string tenantDirectoryPath = Path.Combine(dataPath, tenantName);
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath));
         }
 
@@ -132,8 +145,9 @@ namespace EasyReasy.FileStorage.Tests
             Assert.AreEqual(0, exitCode1);
             Assert.AreEqual(0, exitCode2);
 
-            string tenantDirectoryPath1 = Path.Combine(_testBasePath, tenantName1);
-            string tenantDirectoryPath2 = Path.Combine(_testBasePath, tenantName2);
+            string dataPath = _basePathProvider.GetDataPath();
+            string tenantDirectoryPath1 = Path.Combine(dataPath, tenantName1);
+            string tenantDirectoryPath2 = Path.Combine(dataPath, tenantName2);
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath1));
             Assert.IsTrue(Directory.Exists(tenantDirectoryPath2));
         }

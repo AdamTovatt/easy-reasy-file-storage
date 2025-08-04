@@ -1,5 +1,6 @@
 using EasyReasy.Auth;
 using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 
 namespace EasyReasy.FileStorage.Tests
 {
@@ -20,7 +21,16 @@ namespace EasyReasy.FileStorage.Tests
             Environment.SetEnvironmentVariable("BASE_STORAGE_PATH", _testBasePath);
 
             _passwordHasher = new SecurePasswordHasher();
-            _factory = new FileSystemUserServiceFactory(_passwordHasher);
+            
+            // Create a logger for testing
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            ILogger<FileSystemUserServiceFactory> logger = loggerFactory.CreateLogger<FileSystemUserServiceFactory>();
+            ILogger<BasePathProvider> basePathLogger = loggerFactory.CreateLogger<BasePathProvider>();
+            
+            // Create base path provider
+            IBasePathProvider basePathProvider = new BasePathProvider(basePathLogger);
+            
+            _factory = new FileSystemUserServiceFactory(_passwordHasher, logger, basePathProvider);
         }
 
         [TestCleanup]

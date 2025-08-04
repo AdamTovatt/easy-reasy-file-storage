@@ -1,4 +1,5 @@
-using EasyReasy.EnvironmentVariables;
+using EasyReasy.FileStorage.Server.Services;
+using Microsoft.Extensions.Logging;
 using System.CommandLine;
 
 namespace EasyReasy.FileStorage.Server.Commands
@@ -35,8 +36,13 @@ namespace EasyReasy.FileStorage.Server.Commands
                     return Task.CompletedTask;
                 }
 
-                string baseStoragePath = EnvironmentVariable.BaseStoragePath.GetValue();
-                string tenantDirectoryPath = Path.Combine(baseStoragePath, tenantName);
+                // Create logger factory and logger
+                ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+                ILogger<BasePathProvider> logger = loggerFactory.CreateLogger<BasePathProvider>();
+
+                IBasePathProvider basePathProvider = new BasePathProvider(logger);
+                string dataPath = basePathProvider.GetDataPath();
+                string tenantDirectoryPath = Path.Combine(dataPath, tenantName);
 
                 if (Directory.Exists(tenantDirectoryPath))
                 {
@@ -45,7 +51,8 @@ namespace EasyReasy.FileStorage.Server.Commands
                 }
 
                 Directory.CreateDirectory(tenantDirectoryPath);
-                Console.WriteLine($"Successfully created tenant '{tenantName}' at: {tenantDirectoryPath}");
+                string absoluteTenantPath = Path.GetFullPath(tenantDirectoryPath);
+                Console.WriteLine($"Successfully created tenant '{tenantName}' at: {absoluteTenantPath}");
 
                 return Task.CompletedTask;
             }
