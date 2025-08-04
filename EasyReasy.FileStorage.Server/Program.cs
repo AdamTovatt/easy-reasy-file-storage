@@ -134,6 +134,9 @@ namespace EasyReasy.FileStorage.Server
                 // Register password hasher
                 builder.Services.AddSingleton<IPasswordHasher, SecurePasswordHasher>();
 
+                // Register base path provider
+                builder.Services.AddSingleton<IBasePathProvider, BasePathProvider>();
+
                 // Register user service factory
                 builder.Services.AddSingleton<IUserServiceFactory, FileSystemUserServiceFactory>();
 
