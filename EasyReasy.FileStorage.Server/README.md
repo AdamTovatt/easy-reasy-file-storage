@@ -1,5 +1,7 @@
 # EasyReasy.FileStorage.Server
 
+[← Back to Repository Overview](../README.md)
+
 A multi-tenant file storage server with secure authentication and user management. Built with ASP.NET Core and EasyReasy.Auth for JWT-based authentication.
 
 ## Overview
