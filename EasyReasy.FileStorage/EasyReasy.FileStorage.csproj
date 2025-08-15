@@ -4,6 +4,34 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <Title>EasyReasy.FileStorage</Title>
+    <Authors>Adam Tovatt</Authors>
+    <Description>A .NET library providing abstracted file system operations with security features, file watching capabilities, and streaming support for large files.</Description>
+    <Copyright>MIT</Copyright>
+    <PackageProjectUrl>https://github.com/AdamTovatt/easy-reasy-file-storage/</PackageProjectUrl>
+    <PackageIcon>BaseIcon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/AdamTovatt/easy-reasy-file-storage/</RepositoryUrl>
+    <PackageTags>easyreasy;easy-reasy;file-system;async;security;streaming;file-watching;dotnet;cross-platform</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Icon\BaseIcon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
