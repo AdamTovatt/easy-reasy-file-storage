@@ -41,7 +41,8 @@ The main interface for file system operations:
 ```csharp
 public interface IFileSystem
 {
-    Task<Stream> OpenFileForWritingAsync(string path, bool append = false, CancellationToken cancellationToken = default);
+    Task<Stream> OpenFileForWritingAsync(string path, FileWriteMode mode = FileWriteMode.Overwrite, CancellationToken cancellationToken = default);
+    Task PreAllocateFileAsync(string path, long size, CancellationToken cancellationToken = default);
     Task WriteFileAsTextAsync(string path, string content, CancellationToken cancellationToken = default);
     Task<Stream> OpenFileForReadingAsync(string path, CancellationToken cancellationToken = default);
     Task<string> ReadFileAsTextAsync(string path, Encoding? encoding = null, CancellationToken cancellationToken = default);
@@ -145,11 +146,28 @@ disposable.Dispose();
 ### 5. Streaming Operations
 
 ```csharp
-// Write large files efficiently
-using (Stream writeStream = await fileSystem.OpenFileForWritingAsync("large-file.dat"))
+// Write large files efficiently (overwrites existing file)
+using (Stream writeStream = await fileSystem.OpenFileForWritingAsync("large-file.dat", FileWriteMode.Overwrite))
 {
     byte[] buffer = new byte[8192];
     // Write data to stream
+}
+
+// Append to existing files
+using (Stream writeStream = await fileSystem.OpenFileForWritingAsync("log-file.txt", FileWriteMode.Append))
+{
+    byte[] logEntry = Encoding.UTF8.GetBytes("New log entry\n");
+    await writeStream.WriteAsync(logEntry, 0, logEntry.Length);
+}
+
+// Random access writing (for chunked uploads, database files, etc.)
+await fileSystem.PreAllocateFileAsync("chunked-file.dat", 1024 * 1024); // Pre-allocate 1MB
+using (Stream writeStream = await fileSystem.OpenFileForWritingAsync("chunked-file.dat", FileWriteMode.RandomAccess))
+{
+    // Write chunk at specific position
+    writeStream.Seek(512 * 1024, SeekOrigin.Begin); // Seek to 512KB position
+    byte[] chunk = new byte[1024];
+    await writeStream.WriteAsync(chunk, 0, chunk.Length);
 }
 
 // Read large files efficiently
@@ -157,6 +175,19 @@ using (Stream readStream = await fileSystem.OpenFileForReadingAsync("large-file.
 {
     byte[] buffer = new byte[8192];
     // Read data from stream
+}
+```
+
+### FileWriteMode
+
+The `FileWriteMode` enum controls how files are opened for writing:
+
+```csharp
+public enum FileWriteMode
+{
+    Overwrite,     // Truncates existing file or creates new file (default)
+    Append,        // Appends to end of existing file
+    RandomAccess   // Preserves existing content, allows seeking to any position
 }
 ```
 
