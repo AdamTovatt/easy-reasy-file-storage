@@ -235,7 +235,7 @@ namespace EasyReasy.FileStorage.Tests
         }
 
         [TestMethod]
-        public async Task OpenFileForWritingAsync_WithAppend_ShouldAppendToExistingFile()
+        public async Task OpenFileForWritingAsync_WithAppendMode_ShouldAppendToExistingFile()
         {
             // Arrange
             string filePath = "WriteTest/append-test.txt";
@@ -246,7 +246,7 @@ namespace EasyReasy.FileStorage.Tests
             await _fileSystem.WriteFileAsTextAsync(filePath, initialContent);
 
             // Act - Append content
-            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, append: true))
+            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, FileWriteMode.Append))
             {
                 byte[] appendBytes = System.Text.Encoding.UTF8.GetBytes(appendContent);
                 await stream.WriteAsync(appendBytes, 0, appendBytes.Length);
@@ -258,7 +258,7 @@ namespace EasyReasy.FileStorage.Tests
         }
 
         [TestMethod]
-        public async Task OpenFileForWritingAsync_WithoutAppend_ShouldOverwriteExistingFile()
+        public async Task OpenFileForWritingAsync_WithOverwriteMode_ShouldOverwriteExistingFile()
         {
             // Arrange
             string filePath = "WriteTest/overwrite-test.txt";
@@ -269,7 +269,7 @@ namespace EasyReasy.FileStorage.Tests
             await _fileSystem.WriteFileAsTextAsync(filePath, initialContent);
 
             // Act - Overwrite content
-            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, append: false))
+            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, FileWriteMode.Overwrite))
             {
                 byte[] newBytes = System.Text.Encoding.UTF8.GetBytes(newContent);
                 await stream.WriteAsync(newBytes, 0, newBytes.Length);
@@ -299,6 +299,85 @@ namespace EasyReasy.FileStorage.Tests
             Assert.IsTrue(await _fileSystem.FileExistsAsync(filePath));
             string actualContent = await _fileSystem.ReadFileAsTextAsync(filePath);
             Assert.AreEqual(expectedContent, actualContent);
+        }
+
+        [TestMethod]
+        public async Task PreAllocateFileAsync_ShouldCreateFileWithSpecifiedSize()
+        {
+            // Arrange
+            string filePath = "WriteTest/preallocated-file.txt";
+            long expectedSize = 1024;
+
+            // Act
+            await _fileSystem.PreAllocateFileAsync(filePath, expectedSize);
+
+            // Assert
+            Assert.IsTrue(await _fileSystem.FileExistsAsync(filePath));
+            long actualSize = await _fileSystem.GetFileSizeAsync(filePath);
+            Assert.AreEqual(expectedSize, actualSize);
+        }
+
+        [TestMethod]
+        public async Task OpenFileForWritingAsync_WithRandomAccessMode_ShouldSupportChunkedUploads()
+        {
+            // Arrange
+            string filePath = "WriteTest/chunked-upload-test.txt";
+            long fileSize = 1000;
+            
+            // Pre-allocate the file
+            await _fileSystem.PreAllocateFileAsync(filePath, fileSize);
+
+            // Act - Write chunks at different positions
+            byte[] chunk1 = Encoding.UTF8.GetBytes("Hello");
+            byte[] chunk2 = Encoding.UTF8.GetBytes("World");
+            byte[] chunk3 = Encoding.UTF8.GetBytes("Test");
+
+            // Write chunk 1 at position 0
+            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, FileWriteMode.RandomAccess))
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                await stream.WriteAsync(chunk1, 0, chunk1.Length);
+            }
+
+            // Write chunk 2 at position 500
+            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, FileWriteMode.RandomAccess))
+            {
+                stream.Seek(500, SeekOrigin.Begin);
+                await stream.WriteAsync(chunk2, 0, chunk2.Length);
+            }
+
+            // Write chunk 3 at position 200
+            using (Stream stream = await _fileSystem.OpenFileForWritingAsync(filePath, FileWriteMode.RandomAccess))
+            {
+                stream.Seek(200, SeekOrigin.Begin);
+                await stream.WriteAsync(chunk3, 0, chunk3.Length);
+            }
+
+            // Assert - Verify all chunks are in their correct positions
+            using (Stream readStream = await _fileSystem.OpenFileForReadingAsync(filePath))
+            {
+                // Read chunk 1 (position 0-4)
+                readStream.Seek(0, SeekOrigin.Begin);
+                byte[] readChunk1 = new byte[chunk1.Length];
+                await readStream.ReadAsync(readChunk1, 0, readChunk1.Length);
+                Assert.AreEqual("Hello", Encoding.UTF8.GetString(readChunk1));
+
+                // Read chunk 3 (position 200-203)
+                readStream.Seek(200, SeekOrigin.Begin);
+                byte[] readChunk3 = new byte[chunk3.Length];
+                await readStream.ReadAsync(readChunk3, 0, readChunk3.Length);
+                Assert.AreEqual("Test", Encoding.UTF8.GetString(readChunk3));
+
+                // Read chunk 2 (position 500-504)
+                readStream.Seek(500, SeekOrigin.Begin);
+                byte[] readChunk2 = new byte[chunk2.Length];
+                await readStream.ReadAsync(readChunk2, 0, readChunk2.Length);
+                Assert.AreEqual("World", Encoding.UTF8.GetString(readChunk2));
+            }
+
+            // Verify file size is still correct
+            long actualSize = await _fileSystem.GetFileSizeAsync(filePath);
+            Assert.AreEqual(fileSize, actualSize);
         }
 
         [TestMethod]

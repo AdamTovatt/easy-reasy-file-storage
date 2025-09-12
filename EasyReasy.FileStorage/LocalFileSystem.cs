@@ -103,7 +103,7 @@ namespace EasyReasy.FileStorage
         }
 
         /// <inheritdoc/>
-        public Task<Stream> OpenFileForWritingAsync(string path, bool append = false, CancellationToken cancellationToken = default)
+        public Task<Stream> OpenFileForWritingAsync(string path, FileWriteMode mode = FileWriteMode.Overwrite, CancellationToken cancellationToken = default)
         {
             string fullPath = GetFullPath(path);
 
@@ -114,16 +114,45 @@ namespace EasyReasy.FileStorage
                 Directory.CreateDirectory(directory);
             }
 
-            // Choose file mode based on append parameter
-            FileMode fileMode = append ? FileMode.Append : FileMode.Create;
+            // Choose file mode based on the write mode parameter
+            FileMode fileMode = mode switch
+            {
+                FileWriteMode.Overwrite => FileMode.Create,
+                FileWriteMode.Append => FileMode.Append,
+                FileWriteMode.RandomAccess => FileMode.OpenOrCreate,
+                _ => throw new ArgumentException($"Unsupported FileWriteMode: {mode}", nameof(mode))
+            };
 
             // Notify watchers of file creation (only for new files, not appends)
-            if (!append)
+            if (mode != FileWriteMode.Append)
             {
                 _ = Task.Run(async () => await NotifyWatchersAsync(new FileSystemChangeEvent(FileSystemChangeType.FileAdded, path)));
             }
 
             return Task.FromResult<Stream>(new FileStream(fullPath, fileMode, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous));
+        }
+
+        /// <inheritdoc/>
+        public async Task PreAllocateFileAsync(string path, long size, CancellationToken cancellationToken = default)
+        {
+            string fullPath = GetFullPath(path);
+
+            // Ensure directory exists
+            string? directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Pre-allocate the file by creating it with the specified size
+            using (FileStream fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.Asynchronous))
+            {
+                fileStream.SetLength(size);
+                await fileStream.FlushAsync(cancellationToken);
+            }
+
+            // Notify watchers of file creation
+            await NotifyWatchersAsync(new FileSystemChangeEvent(FileSystemChangeType.FileAdded, path));
         }
 
         /// <inheritdoc/>

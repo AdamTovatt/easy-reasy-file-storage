@@ -12,10 +12,20 @@ namespace EasyReasy.FileStorage
         /// This method is optimized for large files and provides low memory footprint through streaming.
         /// </summary>
         /// <param name="path">The path where the file should be written.</param>
-        /// <param name="append">If true, append to existing file; if false, overwrite the file.</param>
+        /// <param name="mode">The write mode that determines how the file should be opened.</param>
         /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
         /// <returns>A task that represents the asynchronous open operation, containing a stream for writing the file content.</returns>
-        Task<Stream> OpenFileForWritingAsync(string path, bool append = false, CancellationToken cancellationToken = default);
+        Task<Stream> OpenFileForWritingAsync(string path, FileWriteMode mode = FileWriteMode.Overwrite, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Pre-allocates a file with the specified size. This is useful for chunked uploads
+        /// where you need to write to specific positions within the file.
+        /// </summary>
+        /// <param name="path">The path where the file should be pre-allocated.</param>
+        /// <param name="size">The size in bytes to pre-allocate for the file.</param>
+        /// <param name="cancellationToken">Optional cancellation token to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous pre-allocation operation.</returns>
+        Task PreAllocateFileAsync(string path, long size, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Writes text content to a file at the specified path.
