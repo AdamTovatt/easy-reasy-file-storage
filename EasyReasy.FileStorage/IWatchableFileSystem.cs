@@ -3,7 +3,7 @@ namespace EasyReasy.FileStorage;
 /// <summary>
 /// Defines a file system that supports watching for changes.
 /// </summary>
-public interface IWatchableFileSystem
+public interface IWatchableFileSystem : IFileSystem
 {
     /// <summary>
     /// Adds a file system watcher that will be notified of changes.

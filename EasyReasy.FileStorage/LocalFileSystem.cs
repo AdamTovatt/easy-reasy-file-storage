@@ -6,7 +6,7 @@ namespace EasyReasy.FileStorage
     /// Local file system implementation that provides file operations relative to a base path.
     /// Includes security measures to prevent directory traversal attacks.
     /// </summary>
-    public class LocalFileSystem : IFileSystem, IWatchableFileSystem
+    public class LocalFileSystem : IWatchableFileSystem
     {
         private readonly string _basePath;
         private readonly List<IFileSystemWatcher> _watchers = new List<IFileSystemWatcher>();
