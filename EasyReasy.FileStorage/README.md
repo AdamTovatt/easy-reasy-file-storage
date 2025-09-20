@@ -59,10 +59,10 @@ public interface IFileSystem
 ```
 
 ### IWatchableFileSystem
-Interface for file systems that support watching for changes:
+Interface for file systems that support watching for changes. This interface extends `IFileSystem`, providing all basic file operations plus file watching capabilities:
 
 ```csharp
-public interface IWatchableFileSystem
+public interface IWatchableFileSystem : IFileSystem
 {
     Task<IDisposable> AddFileSystemWatcher(IFileSystemWatcher watcher);
     Task RemoveFileSystemWatcher(IFileSystemWatcher watcher);
@@ -80,10 +80,10 @@ public interface IFileSystemWatcher
 ```
 
 ### LocalFileSystem
-The primary implementation that provides local file system operations:
+The primary implementation that provides local file system operations with file watching capabilities:
 
 ```csharp
-public class LocalFileSystem : IFileSystem, IWatchableFileSystem
+public class LocalFileSystem : IWatchableFileSystem
 {
     public LocalFileSystem(string basePath);
 }
@@ -133,11 +133,14 @@ IEnumerable<string> files = await fileSystem.EnumerateFilesAsync("documents");
 ### 4. File Watching
 
 ```csharp
+// Create a watchable file system instance
+IWatchableFileSystem watchableFileSystem = new LocalFileSystem("/path/to/base/directory");
+
 // Create a watcher
 IFileSystemWatcher watcher = new MyFileWatcher();
 
 // Add watcher to file system
-IDisposable disposable = await fileSystem.AddFileSystemWatcher(watcher);
+IDisposable disposable = await watchableFileSystem.AddFileSystemWatcher(watcher);
 
 // Remove watcher when done
 disposable.Dispose();
